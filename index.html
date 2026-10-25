@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>LA Parks and Open Spaces</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Load the ArcGIS Maps SDK for JavaScript from CDN -->
+    <script type="module" src="https://js.arcgis.com/5.1/"></script>
+
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+        <h1>Los Angeles County Parks and Open Space</h1>
+        <p>This interactive map displays parks and open spaces around LA County. Click a park to discover its acreage, access, and owner.
+            The data is from the 
+            <a href="https://services3.arcgis.com/kfmqp6kwSeDnDKNY/ArcGIS/rest/services/LA_greenspace/FeatureServer/0">
+            LA County parks and open space feature service.</a>
+            From the sample, I changed the layer being shown in the map from canopy/carbon information, to parks and open space information. I removed the legend, changed the pop-up, added a search feature, changed the basemap, as well as the zoom settings.
+        </p>
+    </header>
+    <arcgis-map basemap="topo-vector">
+      <arcgis-search slot="top-left"></arcgis-search>
+        <arcgis-zoom slot="top-left"></arcgis-zoom>
+      <arcgis-layer-list slot="top-right"></arcgis-layer-list>
+      <arcgis-legend slot="bottom-left"></arcgis-legend>
+    </arcgis-map>
+
+    <script type="module">
+      const FeatureLayer = await $arcgis.import("@arcgis/core/layers/FeatureLayer.js");
+
+      const viewElement = document.querySelector("arcgis-map");
+      await viewElement.viewOnReady(); // Wait for the properties to be ready.
+
+      // Configure the renderer to alter the symbol style, size breaks, and legend.
+      const outline = { color: "#63917C", width: 1 }; // autocasts as new SimpleLineSymbol()
+      
+const parksRenderer = {
+  type: "simple",
+  label: "Green space",
+  symbol: {
+    type: "simple-fill",
+    color: "#B7D4B5",
+    outline: {
+      color: "#50824D",
+      width: 1
+    }
+  }
+};
+
+const featureLayer = new FeatureLayer({
+  url: "https://services3.arcgis.com/kfmqp6kwSeDnDKNY/ArcGIS/rest/services/LA_greenspace/FeatureServer/0",
+  title: "Parks and Open Space",
+  popupTemplate: {
+    title: "{PARK_NAME}",
+    content:
+      "Access: {ACCESS_TYP}<br>" +
+      "Area (acres): {GIS_ACRES}<br>" +
+      "Owner: {AGNCY_NAME}"
+  },
+
+  renderer: parksRenderer
+});
+
+      viewElement.map.add(featureLayer); // Use the map property to add the layer.
+      await viewElement.whenLayerView(featureLayer); // Wait for the layer to be usable.
+
+      // Zoom to the layer's full extent and customize the animation.
+      await viewElement.goTo(featureLayer.fullExtent, { animate: true, duration: 2500 });
+
+      // Constrain navigation to the layer's full extent.
+      viewElement.constraints = { geometry: featureLayer.fullExtent};
+    </script>
+  </body>
+</html>
